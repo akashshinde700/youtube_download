@@ -1,35 +1,28 @@
-# youtube_download
-This is a web-based YouTube downloader application built using Python's Flask framework and the powerful yt-dlp library. The tool allows users to download individual YouTube videos or entire playlists. It provides a simple user interface for video/playlist URL submission and download quality selection, and supports downloading content in various formats
+**Youtube Downloader:**
+
+This is a YouTube downloader web application built with Python's Flask framework and the yt-dlp library. It allows users to download individual YouTube videos or entire playlists with customizable quality and download paths.
 
 **Features:**
-Download Single Video: Input the URL of a single video, and the tool will download it in the desired quality.
-Download Playlists: Enter a playlist URL to fetch and download the entire playlist or select specific videos.
-User-friendly Web Interface: A basic web page allows easy interaction with the tool.
-Quality Selection: Choose video quality (e.g., best quality or specific formats).
-Custom Download Path: Optionally specify a custom download location.
-yt-dlp Backend: Uses yt-dlp, a powerful tool for downloading videos from YouTube and other sites.
+
+Single Video Download: Download a single video by URL in your desired quality.
+Playlist Download: Download entire playlists or select specific videos.
+User Interface: Simple web interface to interact with the tool.
+Quality & Format Selection: Choose the best video quality or a specific format.
+Custom Download Path: Option to specify where to save files.
+yt-dlp Backend: Uses yt-dlp for efficient video downloading.
 
 **Requirements:**
+
 Python 3.x
-Flask - Install with: pip install Flask
-yt-dlp - Install with: pip install yt-dlp
+Flask: pip install Flask
+yt-dlp: pip install yt-dlp
 
-**Run the Flask server:** 
-Navigate to the project directory and start the server:
-**python server.py**
+**Setup:**
 
-Access the Web Interface: Open your browser and go to **http://127.0.0.1:5000**. The web interface will allow you to:
-
-Input the YouTube video or playlist URL.
-Choose the download quality and specify a custom download path if needed.
-Start the download by clicking the appropriate button.
-
-**Download Process:**
-
-The server will fetch the video or playlist information.
-It will then download the selected content in the best available quality or the specified format.
-Downloaded files will be saved to the specified location.
+Run the server with: python server.py
+Access the web interface at: **http://127.0.0.1:5000**
+License:
+This project is open-source, but users should comply with YouTube’s Terms of Service.
 
 
-**License:**
-This project is open-source and can be modified and used freely. Make sure to adhere to YouTube's Terms of Service when downloading content.
+
