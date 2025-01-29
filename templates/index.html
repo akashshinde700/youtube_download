@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download Videos</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+
+    <div class="max-w-4xl mx-auto p-6">
+
+        <!-- New Section Above Table (URL Input, Fetch, Result Display) -->
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
+            <div class="flex items-center mb-4">
+                <input type="text" id="video_url" class="flex-1 p-2 border border-gray-300 rounded-l-md" placeholder="Enter Video/Playlist URL" required>
+                <button id="fetch_button" class="bg-blue-500 text-white px-4 py-2 rounded-r-md ml-2">Fetch</button>
+            </div>
+
+            <!-- Added Checkbox to select Single Video or Playlist -->
+            <div class="flex items-center mb-4">
+                <label for="is_playlist" class="mr-2">Is it a Playlist?</label>
+                <input type="checkbox" id="is_playlist" class="mr-4">
+            </div>
+
+            <!-- Added Custom Path Input -->
+            <div class="flex items-center mb-4">
+                <label for="custom_path" class="mr-2">Custom Download Path:</label>
+                <input type="text" id="custom_path" class="flex-1 p-2 border border-gray-300 rounded-md" placeholder="Enter custom download path (optional)">
+            </div>
+
+            <div id="result_area" class="mb-4">
+                <h3 class="text-lg font-semibold">Playlist/Video Details:</h3>
+                <p id="playlist_title" class="text-gray-700"></p>
+                <p id="video_count" class="text-gray-500"></p>
+                <p id="playlist_duration" class="text-gray-500"></p>
+            </div>
+
+            <div class="flex space-x-4">
+                <div class="relative">
+                    <button id="download_selected" class="bg-blue-500 text-white px-4 py-2 rounded-md disabled:opacity-50" disabled>Download Selected</button>
+                    <div id="download_selected_options" class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden">
+                        <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" data-quality="best">Best Quality</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" data-quality="720p">720p</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" data-quality="480p">480p</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" data-quality="360p">360p</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <button id="download_all" class="bg-green-500 text-white px-4 py-2 rounded-md disabled:opacity-50" disabled>Download All</button>
+                    <div id="download_all_options" class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden">
+                        <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" data-quality="best">Best Quality</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" data-quality="720p">720p</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" data-quality="480p">480p</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem" data-quality="360p">360p</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table for Video List -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+            <table class="w-full table-auto">
+                <thead>
+                    <tr>
+                        <th class="p-2 text-left">
+                            <input type="checkbox" id="select_all" class="mr-2">
+                            <label for="select_all">Select All</label>
+                        </th>
+                        <th class="p-2 text-left">Title</th>
+                        <th class="p-2 text-left">Duration</th>
+                        <th class="p-2 text-left">Size</th>
+                        <th class="p-2 text-left">Quality</th>
+                        <th class="p-2 text-left">Download</th>
+                    </tr>
+                </thead>
+                <tbody id="video_list">
+                    <!-- Video entries will be dynamically inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Handle Fetch button click
+        document.getElementById('fetch_button').addEventListener('click', function () {
+            const url = document.getElementById('video_url').value;
+            const isPlaylist = document.getElementById('is_playlist').checked;
+
+            if (!url) {
+                alert("Please enter a valid URL.");
+                return;
+            }
+
+            // Determine if it's a video or playlist
+            const endpoint = isPlaylist ? '/fetch_playlist' : '/fetch_video';
+        
+            // Fetch video/playlist details from the backend
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    // Display the playlist/video details
+                    document.getElementById('playlist_title').innerText = `Title: ${data.title}`;
+                    document.getElementById('video_count').innerText = isPlaylist ? `Videos: ${data.video_count}` : '';
+                    document.getElementById('playlist_duration').innerText = `Duration: ${data.duration}`;
+
+                    // Show the video list if it's a playlist
+                    const videoListContainer = document.getElementById('video_list');
+                    videoListContainer.innerHTML = '';
+
+                    data.videos.forEach((video, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td class="p-2"><input type="checkbox" class="video_checkbox" data-index="${index}"></td>
+                            <td class="p-2">${video.title}</td>
+                            <td class="p-2">${video.duration}</td>
+                            <td class="p-2">${(video.size ? video.size.toFixed(2) : 'N/A')} MB</td>
+                            <td class="p-2">
+                                <select class="quality_dropdown border border-gray-300 rounded-md" data-index="${index}">
+                                    <option value="best">Best</option>
+                                    <option value="720p">720p</option>
+                                    <option value="480p">480p</option>
+                                </select>
+                            </td>
+                            <td class="p-2">
+                                <button class="download_button bg-blue-500 text-white px-4 py-2 rounded-md" data-url="${video.url}" data-index="${index}">Download</button>
+                            </td>
+                        `;
+                        videoListContainer.appendChild(row);
+                    });
+
+                    // Enable "Download Selected" and "Download All" buttons after loading video list
+                    document.getElementById('download_selected').disabled = false;
+                    document.getElementById('download_all').disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(`Failed to fetch details: ${error.message}`);
+                });
+        });
+
+        // Handle individual video download button click
+        document.addEventListener('click', function (event) {
+            if (event.target && event.target.classList.contains('download_button')) {
+                const index = event.target.getAttribute('data-index');
+                const quality = document.querySelector(`.quality_dropdown[data-index="${index}"]`).value;
+                const videoUrl = event.target.getAttribute('data-url');
+                const customPath = document.getElementById('custom_path').value;
+
+                downloadVideo(videoUrl, quality, customPath, false);
+            }
+        });
+
+        // Handle Select All checkbox
+        document.getElementById('select_all').addEventListener('change', function () {
+            const checkboxes = document.querySelectorAll('.video_checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+
+        // Handle Download Selected button click
+        document.getElementById('download_selected').addEventListener('click', function(event) {
+            event.preventDefault();
+            document.getElementById('download_selected_options').classList.toggle('hidden');
+        });
+
+        // Handle Download All button click
+        document.getElementById('download_all').addEventListener('click', function(event) {
+            event.preventDefault();
+            document.getElementById('download_all_options').classList.toggle('hidden');
+        });
+
+        // Handle quality selection for Download Selected
+        document.getElementById('download_selected_options').addEventListener('click', function(event) {
+            if (event.target.hasAttribute('data-quality')) {
+                event.preventDefault();
+                const quality = event.target.getAttribute('data-quality');
+                downloadVideos(true, quality);
+                this.classList.add('hidden');
+            }
+        });
+
+        // Handle quality selection for Download All
+        document.getElementById('download_all_options').addEventListener('click', function(event) {
+            if (event.target.hasAttribute('data-quality')) {
+                event.preventDefault();
+                const quality = event.target.getAttribute('data-quality');
+                downloadVideos(false, quality);
+                this.classList.add('hidden');
+            }
+        });
+
+
+        // Handle Download Selected button click
+        document.getElementById('download_selected').addEventListener('click', function () {
+            downloadVideos(true);
+        });
+
+        // Handle Download All button click
+        document.getElementById('download_all').addEventListener('click', function () {
+            downloadVideos(false);
+        });
+
+        function downloadVideos(selectedOnly, quality = 'best') {
+            const videos = [];
+            const checkboxes = document.querySelectorAll('.video_checkbox');
+            const customPath = document.getElementById('custom_path').value;
+
+            checkboxes.forEach(checkbox => {
+                if (!selectedOnly || checkbox.checked) {
+                    const index = checkbox.getAttribute('data-index');
+                    const videoUrl = document.querySelector(`.download_button[data-index="${index}"]`).getAttribute('data-url');
+                    videos.push({ videoUrl, quality });
+                }
+            });
+
+            if (videos.length === 0) {
+                alert("No videos selected for download.");
+                return;
+            }
+
+            // Download videos
+            fetch('/download_video', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    url: document.getElementById('video_url').value, 
+                    quality: quality, 
+                    custom_path: customPath,
+                    is_playlist: true,
+                    selected_files: videos.map(v => v.videoUrl.split('/').pop())
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert(`Successfully downloaded ${data.files.length} files to ${customPath || 'default download directory'}`);
+                }
+            })
+            .catch(error => {
+                alert("Failed to download videos: " + error.message);
+            });
+        }
+
+        function downloadVideo(videoUrl, quality, customPath, isPlaylist) {
+            fetch('/download_video', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    url: videoUrl, 
+                    quality, 
+                    custom_path: customPath,
+                    is_playlist: isPlaylist
+                })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${videoUrl.split('/').pop()}.${quality}.mp4`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                alert("Failed to download video: " + error.message);
+            });
+        }
+    </script>
+</body>
+
+</html>
+
